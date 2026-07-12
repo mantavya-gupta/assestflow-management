@@ -6,6 +6,10 @@ import authRoutes from './routes/auth.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import departmentRoutes from './routes/department.routes';
 import employeeRoutes from './routes/employee.routes';
+import assetRoutes from './routes/asset.routes';
+import allocationRoutes from './routes/allocation.routes';
+import maintenanceRoutes from './routes/maintenance.routes';
+import transferRoutes from './routes/transfer.routes';
 import { verifyOrigin, allowedOrigins } from './middleware/csrf.middleware';
 
 const app = express();
@@ -36,6 +40,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/employees', employeeRoutes);
+app.use('/api/assets', assetRoutes);
+app.use('/api/allocations', allocationRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/transfers', transferRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

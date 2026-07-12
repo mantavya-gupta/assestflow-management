@@ -5,7 +5,7 @@ interface QuickActionProps {
   description: string;
   icon: LucideIcon;
   onClick?: () => void;
-  color?: 'emerald' | 'blue' | 'purple';
+  color?: 'emerald' | 'blue' | 'purple' | 'amber';
 }
 
 export function QuickAction({
@@ -17,9 +17,10 @@ export function QuickAction({
 }: QuickActionProps) {
 
   const colorStyles = {
-    emerald: 'from-emerald-600/20 to-emerald-900/20 hover:from-emerald-500/30 hover:to-emerald-800/30 border-emerald-800/50 text-emerald-500',
-    blue: 'from-blue-600/20 to-blue-900/20 hover:from-blue-500/30 hover:to-blue-800/30 border-blue-800/50 text-blue-500',
-    purple: 'from-purple-600/20 to-purple-900/20 hover:from-purple-500/30 hover:to-purple-800/30 border-purple-800/50 text-purple-500',
+    emerald: 'from-emerald-950/50 to-slate-900 border-emerald-900/50 hover:border-emerald-500/50 group-hover:bg-emerald-500/10 text-emerald-400 group-hover:text-emerald-300',
+    blue: 'from-blue-950/50 to-slate-900 border-blue-900/50 hover:border-blue-500/50 group-hover:bg-blue-500/10 text-blue-400 group-hover:text-blue-300',
+    purple: 'from-purple-950/50 to-slate-900 border-purple-900/50 hover:border-purple-500/50 group-hover:bg-purple-500/10 text-purple-400 group-hover:text-purple-300',
+    amber: 'from-amber-950/50 to-slate-900 border-amber-900/50 hover:border-amber-500/50 group-hover:bg-amber-500/10 text-amber-400 group-hover:text-amber-300',
   };
 
   return (

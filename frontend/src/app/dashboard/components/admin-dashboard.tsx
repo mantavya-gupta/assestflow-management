@@ -2,12 +2,17 @@ import {
   Laptop,
   MonitorCheck,
   Wrench,
-  CalendarCheck,
-  ArrowLeftRight,
   Clock,
+  Package,
+  Building2,
+  UserCircle,
   PlusCircle,
-  CalendarPlus
+  CalendarPlus,
+  ArrowLeftRight,
+  Database,
+  CalendarCheck
 } from 'lucide-react';
+import Link from 'next/link';
 import { KpiCard } from './kpi-card';
 import { QuickAction } from './quick-action';
 import { OverdueAlert } from './overdue-alert';
@@ -57,24 +62,30 @@ export function AdminDashboard({ data }: AdminDashboardProps) {
       <div className="mb-12">
         <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <QuickAction
-            title="Register Asset"
-            description="Add new hardware or licenses to inventory"
-            icon={PlusCircle}
-            color="emerald"
-          />
-          <QuickAction
-            title="Book Resource"
-            description="Reserve equipment for upcoming projects"
-            icon={CalendarPlus}
-            color="blue"
-          />
-          <QuickAction
-            title="Raise Maintenance"
-            description="Report issues or schedule repairs"
-            icon={Wrench}
-            color="purple"
-          />
+          <Link href="/dashboard/assets/register">
+            <QuickAction
+              title="Register Asset"
+              description="Add new hardware or licenses to inventory"
+              icon={PlusCircle}
+              color="emerald"
+            />
+          </Link>
+          <Link href="/dashboard/allocations/new">
+            <QuickAction
+              title="Book Resource"
+              description="Reserve equipment for upcoming projects"
+              icon={CalendarPlus}
+              color="blue"
+            />
+          </Link>
+          <Link href="/dashboard/maintenance/new">
+            <QuickAction
+              title="Raise Maintenance"
+              description="Report issues or schedule repairs"
+              icon={Wrench}
+              color="purple"
+            />
+          </Link>
         </div>
       </div>
 
@@ -85,6 +96,36 @@ export function AdminDashboard({ data }: AdminDashboardProps) {
           {kpiData.map((kpiItem, idx) => (
             <KpiCard key={idx} {...kpiItem} />
           ))}
+        </div>
+      </div>
+
+      <div className="mb-12">
+        <h2 className="text-lg font-semibold text-white mb-4">Management Modules</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link href="/dashboard/assets">
+            <QuickAction
+              title="Asset Directory"
+              description="View full inventory and lifecycle history"
+              icon={Database}
+              color="emerald"
+            />
+          </Link>
+          <Link href="/dashboard/allocations">
+            <QuickAction
+              title="Active Allocations"
+              description="Track current assignments and return assets"
+              icon={Package}
+              color="blue"
+            />
+          </Link>
+          <Link href="/dashboard/transfers">
+            <QuickAction
+              title="Transfer Requests"
+              description="Approve re-assignments between employees"
+              icon={ArrowLeftRight}
+              color="amber"
+            />
+          </Link>
         </div>
       </div>
 
