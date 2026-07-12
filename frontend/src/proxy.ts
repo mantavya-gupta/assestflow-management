@@ -19,7 +19,7 @@ interface SessionUser {
   name: string;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // CSRF-style defense in depth for any state-changing request that hits
   // the Next.js app itself (e.g. future Server Actions). Note: this does
   // NOT cover the auth/dashboard requests, which go directly from the

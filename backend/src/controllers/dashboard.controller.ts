@@ -29,6 +29,20 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
     const sevenDaysFromNow = new Date(now);
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
+    // True count for the KPI card. Kept separate from the `take: 5`
+    // preview list below — using that list's .length for the KPI would
+    // silently cap the reported number at 5 once there are more than 5
+    // upcoming returns.
+    const upcomingReturnsCount = await prisma.assetAllocation.count({
+      where: {
+        status: 'ACTIVE',
+        expectedReturnDate: {
+          gte: now,
+          lte: sevenDaysFromNow
+        }
+      }
+    });
+
     // Get overdue returns
     const overdueReturnsData = await prisma.assetAllocation.findMany({
       where: {
@@ -83,7 +97,7 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
           maintenanceToday,
           activeBookings,
           pendingTransfers,
-          upcomingReturns: upcomingReturnsData.length // just the count for the KPI card
+          upcomingReturns: upcomingReturnsCount // true count, not just the 5-item preview length
         },
         overdueReturns: overdueReturnsData.map(formatReturn),
         upcomingReturns: upcomingReturnsData.map(formatReturn)

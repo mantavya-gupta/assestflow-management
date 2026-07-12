@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
+// Exported so server.ts can configure `cors` with the exact same list —
+// previously the two were parsed independently and only the first origin
+// was ever passed to `cors`, which silently broke any deployment with more
+// than one allowed origin (the browser would reject the response even
+// though this middleware would have allowed the request).
+export const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
   .split(',')
   .map((o) => o.trim());
 

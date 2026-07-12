@@ -6,15 +6,25 @@ import authRoutes from './routes/auth.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import departmentRoutes from './routes/department.routes';
 import employeeRoutes from './routes/employee.routes';
-import { verifyOrigin } from './middleware/csrf.middleware';
+import { verifyOrigin, allowedOrigins } from './middleware/csrf.middleware';
 
 const app = express();
 const port = process.env.PORT || 4000;
 
-const corsOrigin = process.env.ALLOWED_ORIGINS?.split(',')[0] || 'http://localhost:3000';
-
+// Reflect back any origin on the allow-list (same list verifyOrigin uses)
+// instead of a single static string — `cors` only ever sends one static
+// Access-Control-Allow-Origin value per response, so hard-coding just the
+// first ALLOWED_ORIGINS entry silently broke every other allowed origin
+// in multi-origin deployments (verifyOrigin would accept the request, but
+// the browser would then reject the response for a CORS mismatch).
 app.use(cors({
-  origin: corsOrigin,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 
