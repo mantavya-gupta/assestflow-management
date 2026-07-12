@@ -36,6 +36,8 @@ model User {
   headedDepartments   Department[]         @relation("DepartmentHead")
   maintenanceAssigned MaintenanceRequest[] @relation("MaintenanceTechnician")
   bookings            ResourceBooking[]
+  activityLogs        ActivityLog[]
+  notifications       Notification[]
 }
 
 enum DepartmentStatus {
@@ -111,6 +113,19 @@ enum TransferStatus {
   CANCELLED
 }
 
+enum AuditStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum AuditRecordStatus {
+  PENDING
+  VERIFIED
+  MISSING
+  DAMAGED
+}
+
 model Asset {
   id              String      @id @default(uuid())
   assetTag        String      @unique
@@ -130,6 +145,8 @@ model Asset {
   maintenanceRequests MaintenanceRequest[]
   transfers           Transfer[]
   bookings            ResourceBooking[]
+  auditRecords        AuditRecord[]
+  activityLogs        ActivityLog[]
 }
 
 model AssetAllocation {
@@ -191,4 +208,57 @@ model ResourceBooking {
 
   asset Asset @relation(fields: [assetId], references: [id])
   user  User  @relation(fields: [userId], references: [id])
+}
+
+model AuditCycle {
+  id           String      @id @default(uuid())
+  name         String
+  scopeType    String      // "DEPARTMENT", "LOCATION", "ALL"
+  scopeValue   String?     // departmentId or location name
+  startDate    DateTime
+  endDate      DateTime
+  status       AuditStatus @default(OPEN)
+  createdById  String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  records      AuditRecord[]
+}
+
+model AuditRecord {
+  id           String            @id @default(uuid())
+  cycleId      String
+  assetId      String
+  auditorId    String?
+  status       AuditRecordStatus @default(PENDING)
+  notes        String?
+  scannedAt    DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  cycle        AuditCycle @relation(fields: [cycleId], references: [id])
+  asset        Asset      @relation(fields: [assetId], references: [id])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String?
+  userId    String
+  assetId   String?
+  createdAt DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id])
+  asset Asset? @relation(fields: [assetId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  message   String
+  type      String   @default("INFO")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

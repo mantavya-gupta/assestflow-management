@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
+import { logActivity, sendNotification } from '../services/activity.service';
 
 const allocationSchema = z.object({
   assetId: z.string().uuid(),
@@ -56,6 +57,10 @@ export async function createAllocation(req: Request, res: Response) {
       })
     ]);
 
+    const actorId = (req as any).user?.id || 'admin';
+    await logActivity(actorId, 'ASSET_ALLOCATED', `Assigned to user ${assigneeId}`, assetId);
+    await sendNotification(assigneeId, `An asset has been assigned to you.`, 'INFO');
+
     res.json({ success: true, data: allocation });
   } catch (error) {
     console.error('Error creating allocation:', error);
@@ -97,6 +102,9 @@ export async function returnAllocation(req: Request, res: Response) {
         data: { status: 'AVAILABLE' }
       })
     ]);
+
+    const actorId = (req as any).user?.id || 'admin';
+    await logActivity(actorId, 'ASSET_RETURNED', `Asset returned`, allocation.assetId);
 
     res.json({ success: true, data: updatedAllocation });
   } catch (error) {

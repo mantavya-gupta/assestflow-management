@@ -7,7 +7,9 @@ import { API_URL } from '@/lib/api';
 
 export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{name?: string, email?: string, password?: string}>({});
   const [isPending, setIsPending] = useState(false);
+  const [password, setPassword] = useState('');
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -16,16 +18,33 @@ export function SignupForm() {
     setIsPending(true);
 
     const formData = new FormData(e.currentTarget);
-    const name = formData.get('name');
-    const email = formData.get('email');
-    const password = formData.get('password');
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const pass = formData.get('password') as string;
+
+    // Client-side validation
+    let hasError = false;
+    const errors: any = {};
+    if (name.length < 2) { errors.name = "Name must be at least 2 characters"; hasError = true; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errors.email = "Invalid email format"; hasError = true; }
+    if (pass.length < 8) { errors.password = "Password must be at least 8 characters"; hasError = true; }
+    else if (!/[A-Z]/.test(pass)) { errors.password = "Password must contain at least one uppercase letter"; hasError = true; }
+    else if (!/[a-z]/.test(pass)) { errors.password = "Password must contain at least one lowercase letter"; hasError = true; }
+    else if (!/[0-9]/.test(pass)) { errors.password = "Password must contain at least one number"; hasError = true; }
+    else if (!/[^A-Za-z0-9]/.test(pass)) { errors.password = "Password must contain at least one special character"; hasError = true; }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      setIsPending(false);
+      return;
+    }
 
     try {
       const res = await fetch(`${API_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password: pass }),
       });
 
       const data = await res.json();
@@ -46,7 +65,7 @@ export function SignupForm() {
 
   return (
     <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-      <div className="space-y-4 rounded-md shadow-sm">
+      <div className="space-y-5 rounded-md shadow-sm">
         <div>
           <label htmlFor="name" className="sr-only">Full Name</label>
           <input
@@ -55,9 +74,11 @@ export function SignupForm() {
             type="text"
             autoComplete="name"
             required
-            className="relative block w-full rounded-t-md border-0 bg-slate-800/50 py-3 px-4 text-white ring-1 ring-inset ring-slate-700 placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-emerald-500 sm:text-sm sm:leading-6 transition-all"
+            className={`relative block w-full rounded-t-md border-0 bg-slate-800/50 py-3 px-4 text-white ring-1 ring-inset ${fieldErrors.name ? 'ring-rose-500 focus:ring-rose-500' : 'ring-slate-700 focus:ring-emerald-500'} placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6 transition-all`}
             placeholder="Full Name"
+            onChange={() => setFieldErrors({...fieldErrors, name: ''})}
           />
+          {fieldErrors.name && <p className="text-rose-400 text-xs mt-1 ml-1">{fieldErrors.name}</p>}
         </div>
         <div>
           <label htmlFor="email" className="sr-only">Email address</label>
@@ -67,9 +88,11 @@ export function SignupForm() {
             type="email"
             autoComplete="email"
             required
-            className="relative block w-full border-0 bg-slate-800/50 py-3 px-4 text-white ring-1 ring-inset ring-slate-700 placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-emerald-500 sm:text-sm sm:leading-6 transition-all"
+            className={`relative block w-full border-0 bg-slate-800/50 py-3 px-4 text-white ring-1 ring-inset ${fieldErrors.email ? 'ring-rose-500 focus:ring-rose-500' : 'ring-slate-700 focus:ring-emerald-500'} placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6 transition-all`}
             placeholder="Email address"
+            onChange={() => setFieldErrors({...fieldErrors, email: ''})}
           />
+          {fieldErrors.email && <p className="text-rose-400 text-xs mt-1 ml-1">{fieldErrors.email}</p>}
         </div>
         <div>
           <label htmlFor="password" className="sr-only">Password</label>
@@ -79,9 +102,15 @@ export function SignupForm() {
             type="password"
             autoComplete="new-password"
             required
-            className="relative block w-full rounded-b-md border-0 bg-slate-800/50 py-3 px-4 text-white ring-1 ring-inset ring-slate-700 placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-emerald-500 sm:text-sm sm:leading-6 transition-all"
-            placeholder="Password (min 8 characters)"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setFieldErrors({...fieldErrors, password: ''});
+            }}
+            className={`relative block w-full rounded-b-md border-0 bg-slate-800/50 py-3 px-4 text-white ring-1 ring-inset ${fieldErrors.password ? 'ring-rose-500 focus:ring-rose-500' : 'ring-slate-700 focus:ring-emerald-500'} placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6 transition-all`}
+            placeholder="Password (min 8 chars, 1 uppercase, 1 special)"
           />
+          {fieldErrors.password && <p className="text-rose-400 text-xs mt-1 ml-1">{fieldErrors.password}</p>}
         </div>
       </div>
 

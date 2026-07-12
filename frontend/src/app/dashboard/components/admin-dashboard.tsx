@@ -11,12 +11,16 @@ import {
   ArrowLeftRight,
   Database,
   CalendarCheck,
-  CalendarClock
+  CalendarClock,
+  ClipboardCheck,
+  PieChart,
+  Activity
 } from 'lucide-react';
 import Link from 'next/link';
 import { KpiCard } from './kpi-card';
 import { QuickAction } from './quick-action';
 import { OverdueAlert } from './overdue-alert';
+import { NotificationBell } from './notification-bell';
 
 interface ReturnItem {
   id: string;
@@ -54,9 +58,12 @@ export function AdminDashboard({ data }: AdminDashboardProps) {
 
   return (
     <>
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-white tracking-tight">Admin Overview</h1>
-        <p className="mt-2 text-slate-400">Welcome back. Here is your global operational snapshot for today.</p>
+      <div className="mb-10 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Admin Overview</h1>
+          <p className="text-slate-400 mt-2">AssetFlow Management Dashboard</p>
+        </div>
+        <NotificationBell />
       </div>
 
       {/* Quick Actions */}
@@ -141,6 +148,30 @@ export function AdminDashboard({ data }: AdminDashboardProps) {
               description="Schedule shared resources"
               icon={CalendarClock}
               color="emerald"
+            />
+          </Link>
+          <Link href="/dashboard/audits">
+            <QuickAction
+              title="Asset Audits"
+              description="Run verification cycles"
+              icon={ClipboardCheck}
+              color="amber"
+            />
+          </Link>
+          <Link href="/dashboard/reports">
+            <QuickAction
+              title="Reports & Analytics"
+              description="View operational insights"
+              icon={PieChart}
+              color="purple"
+            />
+          </Link>
+          <Link href="/dashboard/activity">
+            <QuickAction
+              title="Activity Logs"
+              description="Audit trail & history"
+              icon={Activity}
+              color="blue"
             />
           </Link>
         </div>

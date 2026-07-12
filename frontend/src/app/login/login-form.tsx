@@ -8,6 +8,7 @@ import { API_URL } from '@/lib/api';
 
 export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{email?: string, password?: string}>({});
   const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
@@ -17,8 +18,20 @@ export function LoginForm() {
     setIsPending(true);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email');
-    const password = formData.get('password');
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    // Client-side validation
+    let hasError = false;
+    const errors: any = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errors.email = "Please enter a valid email format"; hasError = true; }
+    if (password.length < 8) { errors.password = "Password must be at least 8 characters"; hasError = true; }
+
+    if (hasError) {
+      setFieldErrors(errors);
+      setIsPending(false);
+      return;
+    }
 
     try {
       const res = await fetch(`${API_URL}/api/auth/login`, {
@@ -49,7 +62,7 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-      <div className="space-y-4 rounded-md shadow-sm">
+      <div className="space-y-5 rounded-md shadow-sm">
         <div>
           <label htmlFor="email" className="sr-only">Email address</label>
           <input
@@ -58,9 +71,11 @@ export function LoginForm() {
             type="email"
             autoComplete="email"
             required
-            className="relative block w-full rounded-t-md border-0 bg-slate-800/50 py-3 px-4 text-white ring-1 ring-inset ring-slate-700 placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-emerald-500 sm:text-sm sm:leading-6 transition-all"
+            className={`relative block w-full rounded-t-md border-0 bg-slate-800/50 py-3 px-4 text-white ring-1 ring-inset ${fieldErrors.email ? 'ring-rose-500 focus:ring-rose-500' : 'ring-slate-700 focus:ring-emerald-500'} placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6 transition-all`}
             placeholder="Email address"
+            onChange={() => setFieldErrors({...fieldErrors, email: ''})}
           />
+          {fieldErrors.email && <p className="text-rose-400 text-xs mt-1 ml-1">{fieldErrors.email}</p>}
         </div>
         <div>
           <label htmlFor="password" className="sr-only">Password</label>
@@ -70,9 +85,11 @@ export function LoginForm() {
             type="password"
             autoComplete="current-password"
             required
-            className="relative block w-full rounded-b-md border-0 bg-slate-800/50 py-3 px-4 text-white ring-1 ring-inset ring-slate-700 placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-emerald-500 sm:text-sm sm:leading-6 transition-all"
+            className={`relative block w-full rounded-b-md border-0 bg-slate-800/50 py-3 px-4 text-white ring-1 ring-inset ${fieldErrors.password ? 'ring-rose-500 focus:ring-rose-500' : 'ring-slate-700 focus:ring-emerald-500'} placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6 transition-all`}
             placeholder="Password"
+            onChange={() => setFieldErrors({...fieldErrors, password: ''})}
           />
+          {fieldErrors.password && <p className="text-rose-400 text-xs mt-1 ml-1">{fieldErrors.password}</p>}
         </div>
       </div>
 
