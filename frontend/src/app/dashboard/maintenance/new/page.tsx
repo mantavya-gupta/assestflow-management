@@ -16,7 +16,9 @@ export default function RaiseMaintenancePage() {
 
   const [formData, setFormData] = useState({
     assetId: '',
-    issue: ''
+    issue: '',
+    priority: 'MEDIUM',
+    photoUrl: ''
   });
 
   useEffect(() => {
@@ -118,6 +120,35 @@ export default function RaiseMaintenancePage() {
                   onChange={e => setFormData({ ...formData, issue: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none"
                   placeholder="Describe the problem..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Priority Level
+                </label>
+                <select
+                  value={formData.priority}
+                  onChange={e => setFormData({ ...formData, priority: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                >
+                  <option value="LOW">Low - Routine</option>
+                  <option value="MEDIUM">Medium - Needs Attention</option>
+                  <option value="HIGH">High - Urgent</option>
+                  <option value="CRITICAL">Critical - Blocking Work</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Attach Photo URL (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.photoUrl}
+                  onChange={e => setFormData({ ...formData, photoUrl: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                 />
               </div>
 

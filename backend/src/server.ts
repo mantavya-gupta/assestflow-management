@@ -10,6 +10,7 @@ import assetRoutes from './routes/asset.routes';
 import allocationRoutes from './routes/allocation.routes';
 import maintenanceRoutes from './routes/maintenance.routes';
 import transferRoutes from './routes/transfer.routes';
+import bookingRoutes from './routes/booking.routes';
 import { verifyOrigin, allowedOrigins } from './middleware/csrf.middleware';
 
 const app = express();
@@ -44,6 +45,7 @@ app.use('/api/assets', assetRoutes);
 app.use('/api/allocations', allocationRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/transfers', transferRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

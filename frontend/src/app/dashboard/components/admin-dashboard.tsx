@@ -10,7 +10,8 @@ import {
   CalendarPlus,
   ArrowLeftRight,
   Database,
-  CalendarCheck
+  CalendarCheck,
+  CalendarClock
 } from 'lucide-react';
 import Link from 'next/link';
 import { KpiCard } from './kpi-card';
@@ -101,11 +102,11 @@ export function AdminDashboard({ data }: AdminDashboardProps) {
 
       <div className="mb-12">
         <h2 className="text-lg font-semibold text-white mb-4">Management Modules</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <Link href="/dashboard/assets">
             <QuickAction
               title="Asset Directory"
-              description="View full inventory and lifecycle history"
+              description="View full inventory and history"
               icon={Database}
               color="emerald"
             />
@@ -113,7 +114,7 @@ export function AdminDashboard({ data }: AdminDashboardProps) {
           <Link href="/dashboard/allocations">
             <QuickAction
               title="Active Allocations"
-              description="Track current assignments and return assets"
+              description="Track current assignments"
               icon={Package}
               color="blue"
             />
@@ -121,9 +122,25 @@ export function AdminDashboard({ data }: AdminDashboardProps) {
           <Link href="/dashboard/transfers">
             <QuickAction
               title="Transfer Requests"
-              description="Approve re-assignments between employees"
+              description="Approve re-assignments"
               icon={ArrowLeftRight}
               color="amber"
+            />
+          </Link>
+          <Link href="/dashboard/maintenance">
+            <QuickAction
+              title="Maintenance Dashboard"
+              description="Manage active repairs"
+              icon={Wrench}
+              color="purple"
+            />
+          </Link>
+          <Link href="/dashboard/bookings">
+            <QuickAction
+              title="Resource Bookings"
+              description="Schedule shared resources"
+              icon={CalendarClock}
+              color="emerald"
             />
           </Link>
         </div>

@@ -30,10 +30,12 @@ model User {
   updatedAt         DateTime             @updatedAt
   resetTokens       PasswordResetToken[]
   allocations       AssetAllocation[]
-  transfersSent     Transfer[]           @relation("TransferFrom")
-  transfersReceived Transfer[]           @relation("TransferTo")
-  department        Department?          @relation("UserDepartment", fields: [departmentId], references: [id])
-  headedDepartments Department[]         @relation("DepartmentHead")
+  transfersSent       Transfer[]           @relation("TransferFrom")
+  transfersReceived   Transfer[]           @relation("TransferTo")
+  department          Department?          @relation("UserDepartment", fields: [departmentId], references: [id])
+  headedDepartments   Department[]         @relation("DepartmentHead")
+  maintenanceAssigned MaintenanceRequest[] @relation("MaintenanceTechnician")
+  bookings            ResourceBooking[]
 }
 
 enum DepartmentStatus {
@@ -82,8 +84,25 @@ enum AllocationStatus {
 
 enum MaintenanceStatus {
   PENDING
+  APPROVED
+  REJECTED
+  TECHNICIAN_ASSIGNED
   IN_PROGRESS
   RESOLVED
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BookingStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
 }
 
 enum TransferStatus {
@@ -110,6 +129,7 @@ model Asset {
   allocations         AssetAllocation[]
   maintenanceRequests MaintenanceRequest[]
   transfers           Transfer[]
+  bookings            ResourceBooking[]
 }
 
 model AssetAllocation {
@@ -128,16 +148,21 @@ model AssetAllocation {
 }
 
 model MaintenanceRequest {
-  id           String            @id @default(uuid())
+  id           String              @id @default(uuid())
   assetId      String
   issue        String
-  status       MaintenanceStatus @default(PENDING)
-  reportedDate DateTime          @default(now())
+  priority     MaintenancePriority @default(MEDIUM)
+  photoUrl     String?
+  notes        String?
+  status       MaintenanceStatus   @default(PENDING)
+  technicianId String?
+  reportedDate DateTime            @default(now())
   resolvedDate DateTime?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
-  asset Asset @relation(fields: [assetId], references: [id])
+  asset      Asset @relation(fields: [assetId], references: [id])
+  technician User? @relation("MaintenanceTechnician", fields: [technicianId], references: [id])
 }
 
 model Transfer {
@@ -152,4 +177,18 @@ model Transfer {
   asset    Asset @relation(fields: [assetId], references: [id])
   fromUser User  @relation("TransferFrom", fields: [fromUserId], references: [id])
   toUser   User  @relation("TransferTo", fields: [toUserId], references: [id])
+}
+
+model ResourceBooking {
+  id        String        @id @default(uuid())
+  assetId   String
+  userId    String
+  startTime DateTime
+  endTime   DateTime
+  status    BookingStatus @default(UPCOMING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  asset Asset @relation(fields: [assetId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
 }
