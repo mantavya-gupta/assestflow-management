@@ -95,3 +95,71 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };
+
+export const getEmployeeDashboardSummary = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const now = new Date();
+    const sevenDaysFromNow = new Date(now);
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+    // Get allocations for this user
+    const userAllocations = await prisma.assetAllocation.findMany({
+      where: {
+        assigneeId: userId,
+        status: 'ACTIVE'
+      },
+      include: {
+        asset: true
+      }
+    });
+
+    // Extract asset IDs to find related maintenance requests
+    const assetIds = userAllocations.map(a => a.assetId);
+
+    const pendingRequests = await prisma.maintenanceRequest.count({
+      where: {
+        assetId: { in: assetIds },
+        status: { in: ['PENDING', 'IN_PROGRESS'] }
+      }
+    });
+
+    const upcomingReturnsData = userAllocations.filter(
+      a => a.expectedReturnDate >= now && a.expectedReturnDate <= sevenDaysFromNow
+    ).sort((a, b) => a.expectedReturnDate.getTime() - b.expectedReturnDate.getTime());
+
+    const formatReturn = (allocation: any) => ({
+      id: allocation.id,
+      assetName: allocation.asset.name,
+      dueDate: allocation.expectedReturnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      daysOverdue: allocation.expectedReturnDate < now ? 
+        Math.floor((now.getTime() - allocation.expectedReturnDate.getTime()) / (1000 * 3600 * 24)) : undefined
+    });
+
+    res.json({
+      success: true,
+      data: {
+        kpi: {
+          myAssets: userAllocations.length,
+          pendingRequests,
+          upcomingReturns: upcomingReturnsData.length
+        },
+        myAssetsList: userAllocations.map(a => ({
+          id: a.id,
+          assetName: a.asset.name,
+          status: a.asset.status,
+          dueDate: a.expectedReturnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        })),
+        upcomingReturns: upcomingReturnsData.map(formatReturn)
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in getEmployeeDashboardSummary:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};

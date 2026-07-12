@@ -4,6 +4,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import departmentRoutes from './routes/department.routes';
+import employeeRoutes from './routes/employee.routes';
 import { verifyOrigin } from './middleware/csrf.middleware';
 
 const app = express();
@@ -22,6 +24,8 @@ app.use(verifyOrigin);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/employees', employeeRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

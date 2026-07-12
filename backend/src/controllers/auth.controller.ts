@@ -181,3 +181,17 @@ export async function resetPassword(req: Request, res: Response) {
     res.status(500).json({ error: 'An unexpected error occurred.' });
   }
 }
+
+export async function logout(req: Request, res: Response) {
+  res.clearCookie('session', {
+    path: '/',
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  });
+  res.json({ success: true });
+}
+
+export async function me(req: Request, res: Response) {
+  // requires requireAuth middleware which populates req.user
+  res.json({ success: true, user: (req as any).user });
+}

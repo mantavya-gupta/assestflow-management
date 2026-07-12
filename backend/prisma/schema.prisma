@@ -13,18 +13,47 @@ enum Role {
   ADMIN
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
   id                String               @id @default(uuid())
   email             String               @unique
   password          String
   name              String
   role              Role                 @default(EMPLOYEE)
+  status            UserStatus           @default(ACTIVE)
+  departmentId      String?
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
   resetTokens       PasswordResetToken[]
   allocations       AssetAllocation[]
   transfersSent     Transfer[]           @relation("TransferFrom")
   transfersReceived Transfer[]           @relation("TransferTo")
+  department        Department?          @relation("UserDepartment", fields: [departmentId], references: [id])
+  headedDepartments Department[]         @relation("DepartmentHead")
+}
+
+enum DepartmentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Department {
+  id        String           @id @default(uuid())
+  name      String           @unique
+  status    DepartmentStatus @default(ACTIVE)
+  headId    String?
+  parentId  String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  head      User?        @relation("DepartmentHead", fields: [headId], references: [id])
+  parent    Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children  Department[] @relation("DepartmentHierarchy")
+  employees User[]       @relation("UserDepartment")
 }
 
 model PasswordResetToken {
