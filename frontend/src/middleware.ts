@@ -2,54 +2,45 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const secretKey = process.env.JWT_SECRET || 'secret';
-const key = new TextEncoder().encode(secretKey);
-
-// Basic in-memory rate limiting (per edge isolate)
-const ipRateLimit = new Map<string, { count: number; timestamp: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const windowMs = 60 * 1000; // 1 minute
-  const maxRequests = 10; // Allow 10 requests per minute for login
-
-  const record = ipRateLimit.get(ip);
-  if (!record || (now - record.timestamp > windowMs)) {
-    ipRateLimit.set(ip, { count: 1, timestamp: now });
-    return true;
+function getSecretKey(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production.');
   }
+  return new TextEncoder().encode(secret || 'dev-only-insecure-secret');
+}
 
-  if (record.count >= maxRequests) {
-    return false;
-  }
+const key = getSecretKey();
 
-  record.count += 1;
-  return true;
+interface SessionUser {
+  id: string;
+  email: string;
+  role: string;
+  name: string;
 }
 
 export async function middleware(request: NextRequest) {
-  // CSRF Protection for state-changing requests (like POST to Server Actions)
+  // CSRF-style defense in depth for any state-changing request that hits
+  // the Next.js app itself (e.g. future Server Actions). Note: this does
+  // NOT cover the auth/dashboard requests, which go directly from the
+  // browser to the Express backend on a different port — that traffic is
+  // protected by the equivalent check in the backend's own middleware,
+  // since it never passes through this file at all.
   if (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'OPTIONS') {
     const origin = request.headers.get('origin');
     const host = request.headers.get('host');
-    
+
     if (origin && host) {
       try {
         const originUrl = new URL(origin);
         if (originUrl.host !== host) {
           return new NextResponse('Forbidden: CSRF check failed', { status: 403 });
         }
-      } catch (e) {
-        // Invalid origin
+      } catch {
+        // Invalid origin header — fall through and let the request proceed;
+        // it isn't same-origin trusted, but this file only guards Next.js
+        // routes, not the real API.
       }
-    }
-  }
-
-  // Rate Limiting for the login route
-  if (request.nextUrl.pathname === '/login' && request.method === 'POST') {
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
-    if (!checkRateLimit(ip)) {
-      return new NextResponse('Too Many Requests', { status: 429 });
     }
   }
 
@@ -67,7 +58,7 @@ export async function middleware(request: NextRequest) {
   if (session) {
     try {
       const { payload } = await jwtVerify(session, key, { algorithms: ['HS256'] });
-      const user = payload.user as any;
+      const user = payload.user as SessionUser;
 
       // Role-based access control
       if (isAdminRoute && user.role !== 'ADMIN') {
@@ -82,7 +73,7 @@ export async function middleware(request: NextRequest) {
       if (request.nextUrl.pathname === '/login') {
         return NextResponse.redirect(new URL('/dashboard', request.url));
       }
-    } catch (err) {
+    } catch {
       // Invalid token
       if (isDashboardRoute || isAdminRoute || isAssetManagerRoute) {
         const response = NextResponse.redirect(new URL('/login', request.url));

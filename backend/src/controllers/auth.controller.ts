@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { hashPassword, verifyPassword, encrypt } from '../lib/auth';
 import crypto from 'crypto';
 import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -80,7 +81,12 @@ export async function login(req: Request, res: Response) {
       expires,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
+      // 'lax' (not 'strict') so the cookie still works if frontend and
+      // backend ever end up on different subdomains/hosts in production.
+      // The other half of making this cookie actually arrive at all is
+      // the frontend sending `credentials: 'include'` on every request.
+      sameSite: 'lax',
+      path: '/',
     });
 
     res.json({ success: true });
@@ -111,10 +117,15 @@ export async function forgotPassword(req: Request, res: Response) {
       data: { token, expiresAt, userId: user.id },
     });
 
-    const resetLink = `http://localhost:3000/reset-password?token=${token}`;
-    console.log(`\n=== PASSWORD RESET LINK GENERATED ===\nUser: ${email}\nLink: ${resetLink}\n=======================================\n`);
+    // In a real deployment this token is emailed to the user, never
+    // returned in the API response. Logging it server-side only (not
+    // sent to the client) is a stand-in for that email step in local dev.
+    if (process.env.NODE_ENV !== 'production') {
+      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+      console.log(`\n=== [DEV ONLY] PASSWORD RESET LINK ===\nUser: ${email}\nLink: ${resetLink}\n=======================================\n`);
+    }
 
-    res.json({ success: 'If that email exists, a reset link has been generated.', _mockLink: resetLink });
+    res.json({ success: 'If that email exists, a reset link has been generated.' });
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ error: 'An unexpected error occurred.' });
@@ -144,13 +155,25 @@ export async function resetPassword(req: Request, res: Response) {
     }
 
     const hashedPassword = await hashPassword(password);
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: resetToken.userId },
-        data: { password: hashedPassword },
-      }),
-      prisma.passwordResetToken.delete({ where: { id: resetToken.id } }),
-    ]);
+
+    try {
+      // Delete the token FIRST. Prisma's delete on a unique id is atomic,
+      // so if two requests race on the same token, only one delete can
+      // succeed — the loser throws (record not found) and is treated as
+      // an already-used/invalid token, instead of both requests being
+      // able to reset the password.
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        const deleted = await tx.passwordResetToken.delete({
+          where: { id: resetToken.id },
+        });
+        await tx.user.update({
+          where: { id: deleted.userId },
+          data: { password: hashedPassword },
+        });
+      });
+    } catch (err) {
+      return res.status(400).json({ error: 'This reset link has already been used or is no longer valid.' });
+    }
 
     res.json({ success: true });
   } catch (error) {

@@ -1,5 +1,4 @@
 import { AlertCircle, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 
 interface OverdueItem {
   id: string;

@@ -1,8 +1,22 @@
 import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 
-const secretKey = process.env.JWT_SECRET || 'secret';
-const key = new TextEncoder().encode(secretKey);
+function getSecretKey(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      // Fail fast rather than silently signing tokens with a public,
+      // guessable default secret in production.
+      throw new Error('JWT_SECRET environment variable is required in production.');
+    }
+    console.warn('[auth] JWT_SECRET is not set — using an insecure default for local development only.');
+  }
+
+  return new TextEncoder().encode(secret || 'dev-only-insecure-secret');
+}
+
+const key = getSecretKey();
 
 export async function hashPassword(password: string): Promise<string> {
   return await bcrypt.hash(password, 10);

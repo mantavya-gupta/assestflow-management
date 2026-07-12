@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { API_URL } from '@/lib/api';
 
 export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
@@ -20,9 +21,12 @@ export function LoginForm() {
     const password = formData.get('password');
 
     try {
-      const res = await fetch('http://localhost:4000/api/auth/login', {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // Without this, the browser discards the Set-Cookie header on this
+        // cross-origin response and the session cookie never gets stored.
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -37,6 +41,7 @@ export function LoginForm() {
       router.push('/dashboard');
       router.refresh();
     } catch (err) {
+      console.error(err);
       setError('An unexpected error occurred.');
       setIsPending(false);
     }

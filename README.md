@@ -1,38 +1,73 @@
-# assestflow-management
+# AssetFlow
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Enterprise asset and resource management. Two-service project:
 
-## Getting Started
+- `frontend/` — Next.js 16 app (UI, pages, auth forms)
+- `backend/` — Express API (auth, dashboard data, Prisma/Postgres)
 
-First, run the development server:
+## Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 20+
+- Docker (for local Postgres) — or your own Postgres instance
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Database**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```bash
+   cp .env.example .env      # set a real POSTGRES_PASSWORD
+   docker compose up -d
+   ```
 
-## Learn More
+2. **Backend**
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   cd backend
+   cp .env.example .env      # set JWT_SECRET, and DATABASE_URL to match step 1
+   npm install
+   npx prisma migrate dev
+   npm run dev                # http://localhost:4000
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Frontend**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   cd frontend
+   cp .env.example .env      # JWT_SECRET must match the backend's exactly
+   npm install
+   npm run dev                # http://localhost:3000
+   ```
 
-## Deploy on Vercel
+Open [http://localhost:3000](http://localhost:3000).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Why two `.env` files need the same `JWT_SECRET`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The frontend (Next.js middleware) and backend (Express) each verify the
+session JWT independently — there's no shared session store. If the
+secrets don't match, every request will look logged-out even after a
+successful login. In production, set `JWT_SECRET` via your hosting
+platform's secret manager for both services, and keep them in sync.
+
+## Architecture notes
+
+- The frontend never talks to Postgres directly — all data access goes
+  through the backend API. Auth forms call the backend at
+  `NEXT_PUBLIC_API_URL` with `credentials: 'include'` so the session
+  cookie set by the backend is stored and sent back on later requests.
+- `backend/src/middleware/auth.middleware.ts` guards any route that
+  requires a session (currently `/api/dashboard/summary`).
+- Rate limiting and CSRF origin checks are enforced in the backend
+  (`backend/src/middleware/`), since that's where the browser's requests
+  actually land — not in the Next.js middleware, which only ever sees
+  requests to Next.js's own routes.
+- Password reset links are logged server-side in development only
+  (`NODE_ENV !== 'production'`) and are never included in the API
+  response. In a real deployment, wire `forgotPassword` in
+  `backend/src/controllers/auth.controller.ts` up to an email provider
+  instead of the console.log.
+
+## Deploying
+
+Set `NODE_ENV=production` and a real `JWT_SECRET` on both services —
+the app intentionally fails to start in production without one, rather
+than silently falling back to an insecure default.

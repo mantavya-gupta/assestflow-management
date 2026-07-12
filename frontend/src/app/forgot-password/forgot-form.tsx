@@ -2,28 +2,27 @@
 
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { API_URL } from '@/lib/api';
 
 export function ForgotForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [mockLink, setMockLink] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setSuccess(null);
-    setMockLink(null);
     setIsPending(true);
 
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email');
 
     try {
-      const res = await fetch('http://localhost:4000/api/auth/forgot-password', {
+      const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email }),
       });
 
@@ -36,8 +35,8 @@ export function ForgotForm() {
       }
 
       setSuccess(data.success);
-      setMockLink(data._mockLink);
     } catch (err) {
+      console.error(err);
       setError('An unexpected error occurred.');
     } finally {
       setIsPending(false);
@@ -50,11 +49,9 @@ export function ForgotForm() {
         <div className="rounded-md bg-emerald-950/50 p-4 border border-emerald-900">
           <p className="text-sm font-medium text-emerald-400">{success}</p>
         </div>
-        {mockLink && (
-          <div className="mt-4 text-xs text-slate-400 break-all p-2 bg-slate-950 rounded border border-slate-800">
-            [Demo Only] Link: <Link href={mockLink} className="text-emerald-500 hover:underline">{mockLink}</Link>
-          </div>
-        )}
+        <p className="text-xs text-slate-500">
+          If an account exists for that address, check your inbox for a reset link.
+        </p>
       </div>
     );
   }

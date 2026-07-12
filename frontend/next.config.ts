@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// The browser needs to be allowed to call the backend API directly
+// (auth forms, dashboard data) — a bare `connect-src 'self'` blocks
+// every one of those cross-origin fetch calls.
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -24,7 +29,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'self';",
+            value: `default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' ${apiUrl};`,
           },
         ],
       },

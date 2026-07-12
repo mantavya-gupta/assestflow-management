@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { API_URL } from '@/lib/api';
 
 export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
@@ -20,9 +21,10 @@ export function SignupForm() {
     const password = formData.get('password');
 
     try {
-      const res = await fetch('http://localhost:4000/api/auth/signup', {
+      const res = await fetch(`${API_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ name, email, password }),
       });
 
@@ -36,6 +38,7 @@ export function SignupForm() {
 
       router.push('/login?registered=true');
     } catch (err) {
+      console.error(err);
       setError('An unexpected error occurred.');
       setIsPending(false);
     }
