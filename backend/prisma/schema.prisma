@@ -14,14 +14,17 @@ enum Role {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      Role     @default(EMPLOYEE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  resetTokens PasswordResetToken[]
+  id                String               @id @default(uuid())
+  email             String               @unique
+  password          String
+  name              String
+  role              Role                 @default(EMPLOYEE)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  resetTokens       PasswordResetToken[]
+  allocations       AssetAllocation[]
+  transfersSent     Transfer[]           @relation("TransferFrom")
+  transfersReceived Transfer[]           @relation("TransferTo")
 }
 
 model PasswordResetToken {
@@ -31,4 +34,82 @@ model PasswordResetToken {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ALLOCATED
+  MAINTENANCE
+  RETIRED
+}
+
+enum AllocationStatus {
+  ACTIVE
+  RETURNED
+}
+
+enum MaintenanceStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum TransferStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model Asset {
+  id        String      @id @default(uuid())
+  name      String
+  type      String
+  status    AssetStatus @default(AVAILABLE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  allocations         AssetAllocation[]
+  maintenanceRequests MaintenanceRequest[]
+  transfers           Transfer[]
+}
+
+model AssetAllocation {
+  id                 String           @id @default(uuid())
+  assetId            String
+  assigneeId         String
+  expectedReturnDate DateTime
+  actualReturnDate   DateTime?
+  status             AllocationStatus @default(ACTIVE)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  asset    Asset @relation(fields: [assetId], references: [id])
+  assignee User  @relation(fields: [assigneeId], references: [id])
+}
+
+model MaintenanceRequest {
+  id           String            @id @default(uuid())
+  assetId      String
+  issue        String
+  status       MaintenanceStatus @default(PENDING)
+  reportedDate DateTime          @default(now())
+  resolvedDate DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  asset Asset @relation(fields: [assetId], references: [id])
+}
+
+model Transfer {
+  id         String         @id @default(uuid())
+  assetId    String
+  fromUserId String
+  toUserId   String
+  status     TransferStatus @default(PENDING)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  asset    Asset @relation(fields: [assetId], references: [id])
+  fromUser User  @relation("TransferFrom", fields: [fromUserId], references: [id])
+  toUser   User  @relation("TransferTo", fields: [toUserId], references: [id])
 }

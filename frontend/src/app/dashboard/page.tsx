@@ -12,30 +12,43 @@ import { KpiCard } from './components/kpi-card';
 import { QuickAction } from './components/quick-action';
 import { OverdueAlert } from './components/overdue-alert';
 
-// --- MOCK DATA ---
-const kpiData = [
-  { title: 'Assets Available', value: 124, icon: Laptop, trend: '+12%', trendDirection: 'up' as const, color: 'emerald' as const },
-  { title: 'Assets Allocated', value: 342, icon: MonitorCheck, trend: '+2%', trendDirection: 'up' as const, color: 'blue' as const },
-  { title: 'Maintenance Today', value: 8, icon: Wrench, trend: '-1', trendDirection: 'down' as const, color: 'rose' as const },
-  { title: 'Active Bookings', value: 45, icon: CalendarCheck, color: 'purple' as const },
-  { title: 'Pending Transfers', value: 12, icon: ArrowLeftRight, trend: 'Requires action', trendDirection: 'neutral' as const, color: 'amber' as const },
-  { title: 'Upcoming Returns', value: 28, icon: Clock, color: 'slate' as const },
-];
+async function getDashboardData() {
+  try {
+    const res = await fetch('http://localhost:4000/api/dashboard/summary', { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to fetch data');
+    const json = await res.json();
+    return json.data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
 
-const overdueReturns = [
-  { id: '1', assetName: 'MacBook Pro 16" (M2 Max)', assignee: 'Sarah Jenkins', dueDate: 'Oct 12, 2023', daysOverdue: 14 },
-  { id: '2', assetName: 'Dell UltraSharp 32" 4K Monitor', assignee: 'Michael Chang', dueDate: 'Oct 20, 2023', daysOverdue: 6 },
-  { id: '3', assetName: 'Herman Miller Aeron Chair', assignee: 'Alex Rodriguez', dueDate: 'Oct 24, 2023', daysOverdue: 2 },
-];
+export default async function DashboardPage() {
+  const data = await getDashboardData();
+  
+  // Default fallbacks if backend is unavailable
+  const kpi = data?.kpi || {
+    assetsAvailable: 0,
+    assetsAllocated: 0,
+    maintenanceToday: 0,
+    activeBookings: 0,
+    pendingTransfers: 0,
+    upcomingReturns: 0
+  };
 
-const upcomingReturns = [
-  { id: '4', assetName: 'iPad Pro 12.9"', assignee: 'Emily Chen', dueDate: 'Oct 28, 2023' },
-  { id: '5', assetName: 'Logitech MX Master 3', assignee: 'David Smith', dueDate: 'Oct 29, 2023' },
-  { id: '6', assetName: 'Standing Desk - Ergo', assignee: 'Jessica Williams', dueDate: 'Oct 31, 2023' },
-];
-// -----------------
+  const overdueReturns = data?.overdueReturns || [];
+  const upcomingReturns = data?.upcomingReturns || [];
 
-export default function DashboardPage() {
+  const kpiData = [
+    { title: 'Assets Available', value: kpi.assetsAvailable, icon: Laptop, color: 'emerald' as const },
+    { title: 'Assets Allocated', value: kpi.assetsAllocated, icon: MonitorCheck, color: 'blue' as const },
+    { title: 'Maintenance Today', value: kpi.maintenanceToday, icon: Wrench, color: 'rose' as const },
+    { title: 'Active Bookings', value: kpi.activeBookings, icon: CalendarCheck, color: 'purple' as const },
+    { title: 'Pending Transfers', value: kpi.pendingTransfers, icon: ArrowLeftRight, color: 'amber' as const },
+    { title: 'Upcoming Returns', value: kpi.upcomingReturns, icon: Clock, color: 'slate' as const },
+  ];
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-300 pb-20 relative">
       {/* Background ambient glow */}
@@ -78,8 +91,8 @@ export default function DashboardPage() {
         <div className="mb-12">
           <h2 className="text-lg font-semibold text-white mb-4">Key Metrics</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {kpiData.map((kpi, idx) => (
-              <KpiCard key={idx} {...kpi} />
+            {kpiData.map((kpiItem, idx) => (
+              <KpiCard key={idx} {...kpiItem} />
             ))}
           </div>
         </div>
@@ -104,22 +117,26 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-4">
-              {upcomingReturns.map((item) => (
-                <div 
-                  key={item.id} 
-                  className="flex items-center justify-between border-b border-slate-800/50 pb-4 last:border-0 last:pb-0"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="font-medium text-slate-200">{item.assetName}</span>
-                    <span className="text-sm text-slate-500">{item.assignee}</span>
+              {upcomingReturns.length === 0 ? (
+                 <div className="text-sm text-slate-500 italic">No upcoming returns scheduled.</div>
+              ) : (
+                upcomingReturns.map((item: any) => (
+                  <div 
+                    key={item.id} 
+                    className="flex items-center justify-between border-b border-slate-800/50 pb-4 last:border-0 last:pb-0"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium text-slate-200">{item.assetName}</span>
+                      <span className="text-sm text-slate-500">{item.assignee}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-sm text-slate-400">
+                        Due: {item.dueDate}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="block text-sm text-slate-400">
-                      Due: {item.dueDate}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
